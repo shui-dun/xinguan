@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
+    <title>疫情实时报告</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+	<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div id="root">
+        <div class="page-header">
+            <h2>新冠疫情
+                <small>实时通报</small>
+            </h2>
+        </div>
+        <div id="news_list"></div>
+        <table class="table table-striped">
+            <tbody id="guonei_body">
+                <p class="lead">国内病例统计</p>
+            </tbody>
+        </table>
+        <table class="table table-striped">
+            <tbody id="guowai_body">
+                <p class="lead">国外病例统计</p>
+            </tbody>
+        </table>
+        <table class="table table-striped">
+            <tbody id="note_body">
+                <p class="lead">温馨提示</p>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        var json;
+
+        function main() {
+            var url = 'http://api.tianapi.com/txapi/ncov/index?key=xxx';
+            var request = new XMLHttpRequest();
+            request.open("get", url);
+            request.send(null);
+            request.onload = function () {
+                if (request.status == 200) {
+                    json = JSON.parse(request.responseText);
+                    update_news();
+                    update_guonei();
+                    update_guowai();
+                    update_note();
+                }
+            }
+        }
+
+        function update_news() {
+            var num = json.newslist[0].news.length;
+            for (var i = 0; i < num; i++) {
+                var news = json.newslist[0].news[i];
+                div = document.createElement("div");
+                div.className = 'panel panel-default';
+                document.getElementById("news_list").appendChild(div);
+                div_head = document.createElement("div");
+                div_head.className = 'panel-heading';
+                div.appendChild(div_head);
+                a = document.createElement("a");
+                a.href = news.sourceUrl;
+                a.innerHTML = news.title;
+                div_head.appendChild(a);
+                div_body = document.createElement("div");
+                div_body.className = 'panel-body';
+                div.appendChild(div_body);
+                div_time = document.createElement("div");
+                div_time.className = 'label label-default';
+                div_time.innerHTML = news.pubDateStr;
+                div_body.appendChild(div_time);
+                span = document.createElement("span");
+                span.innerHTML = ' ';
+                div_body.appendChild(span);
+                div_src = document.createElement("div");
+                div_src.className = 'label label-default';
+                div_src.innerHTML = news.infoSource;
+                div_body.appendChild(div_src);
+                p = document.createElement("p");
+                p.innerHTML = news.summary;
+                div_body.appendChild(p);
+            }
+        }
+
+        function update_guonei() {
+            var array = ["currentConfirmedCount",
+                "confirmedCount",
+                "suspectedCount",
+                "curedCount",
+                "deadCount",
+                "seriousCount",
+                "suspectedIncr",
+                "currentConfirmedIncr",
+                "confirmedIncr",
+                "curedIncr",
+                "deadIncr",
+                "seriousIncr"];
+            for (let element in array) {
+                tr = document.createElement('tr');
+                document.getElementById('guonei_body').appendChild(tr);
+                td1 = document.createElement('td');
+                td1.innerHTML = array[element];
+                tr.appendChild(td1);
+                td2 = document.createElement('td');
+                td2.innerHTML = json.newslist[0].desc[array[element]];
+                tr.appendChild(td2);
+            }
+        }
+
+        function update_guowai() {
+            map = json.newslist[0].desc.foreignStatistics;
+            for (let key in map) {
+                tr = document.createElement('tr');
+                document.getElementById('guowai_body').appendChild(tr);
+                td1 = document.createElement('td');
+                td1.innerHTML = key;
+                tr.appendChild(td1);
+                td2 = document.createElement('td');
+                td2.innerHTML = map[key];
+                tr.appendChild(td2);
+            }
+        }
+
+        function update_note() {
+            for (let key in json.newslist[0].desc) {
+                if (key.indexOf('remark') != -1 || key.indexOf('note') != -1) {
+                    texts = json.newslist[0].desc[key].split('：', 2);
+                    if (texts[1]) {
+                        tr = document.createElement('tr');
+                        document.getElementById('note_body').appendChild(tr);
+                        td1 = document.createElement('td');
+                        td1.innerHTML = texts[0];
+                        tr.appendChild(td1);
+                        td2 = document.createElement('td');
+                        td2.innerHTML = texts[1];
+                        tr.appendChild(td2);
+                    }
+                }
+            }
+        }
+
+        window.onload = function () {
+			if (!(/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent))) {
+				$('#root').css({ "margin": "auto", "width": "65%" });
+            }
+            this.main();
+        };
+    </script>
+</body>
+
+</html>

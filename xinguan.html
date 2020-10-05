@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
+    <title>全球新冠疫情实时报告</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0 auto;
+        }
+
+        #total_title {
+            width: 90%;
+            padding: 10px;
+            border-bottom: 1px solid gray;
+        }
+
+        #news_list {
+            width: 90%;
+        }
+
+        .news_block {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-width: 1px;
+            border-style: solid;
+            border-color: black;
+            border-radius: 10px;
+        }
+
+        .news_block:hover {
+            background-color: lightgrey;
+            color: white;
+        }
+
+        .news_title {
+            margin-bottom: 10px;
+        }
+
+        .news_url {
+            color: black;
+        }
+
+        .desc_table {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border-collapse: collapse;
+            width: 90%;
+        }
+
+        .desc_table th {
+            padding-bottom: 10px;
+            text-align: left;
+        }
+
+        .desc_table td {
+            border-color: black;
+            border-width: 1px;
+            border-style: solid;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root">
+        <div id="total_title">
+            <h1>全球新冠疫情实时报告</h1>
+        </div>
+        <div id="news_list"></div>
+        <table class="desc_table">
+            <tbody id="guonei_body">
+                <th>国内疫情</th>
+            </tbody>
+        </table>
+        <table class="desc_table">
+            <tbody id="guowai_body">
+                <th>国外疫情</th>
+            </tbody>
+        </table>
+        <table class="desc_table">
+            <tbody id="note_body">
+                <th>特别注意</th>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        var json;
+
+        function main() {
+            var url = 'http://api.tianapi.com/txapi/ncov/index?key=xxx';
+            var request = new XMLHttpRequest();
+            request.open("get", url);
+            request.send(null);
+            request.onload = function () {
+                if (request.status == 200) {
+                    json = JSON.parse(request.responseText);
+                    update_news();
+                    update_guonei();
+                    update_guowai();
+                    update_note();
+                }
+            }
+        }
+
+        function update_news() {
+            var num = json.newslist[0].news.length;
+            for (var i = 0; i < num; i++) {
+                var news = json.newslist[0].news[i];
+                div = document.createElement("div");
+                div.className = 'news_block';
+                document.getElementById("news_list").appendChild(div);
+                h2 = document.createElement("h2");
+                h2.className = 'news_title'
+                div.appendChild(h2);
+                a = document.createElement("a");
+                a.className = 'news_url';
+                a.href = news.sourceUrl;
+                a.innerHTML = news.title;
+                h2.appendChild(a);
+                div2 = document.createElement("div");
+                div2.className = 'news_content';
+                div.appendChild(div2);
+                span = document.createElement('span');
+                span.className = 'news_inner';
+                text = '发布时间：' + news.pubDateStr + '，新闻来源：' + news.infoSource + '，' + news.summary;
+                span.innerHTML = text;
+                div2.appendChild(span)
+            }
+        }
+
+        function update_guonei() {
+            var array = ["currentConfirmedCount",
+                "confirmedCount",
+                "suspectedCount",
+                "curedCount",
+                "deadCount",
+                "seriousCount",
+                "suspectedIncr",
+                "currentConfirmedIncr",
+                "confirmedIncr",
+                "curedIncr",
+                "deadIncr",
+                "seriousIncr"];
+            for (let element in array) {
+                tr = document.createElement('tr');
+                document.getElementById('guonei_body').appendChild(tr);
+                td1 = document.createElement('td');
+                td1.innerHTML = array[element];
+                tr.appendChild(td1);
+                td2 = document.createElement('td');
+                td2.innerHTML = json.newslist[0].desc[array[element]];
+                tr.appendChild(td2);
+            }
+        }
+
+        function update_guowai() {
+            map = json.newslist[0].desc.foreignStatistics;
+            for (let key in map) {
+                tr = document.createElement('tr');
+                document.getElementById('guowai_body').appendChild(tr);
+                td1 = document.createElement('td');
+                td1.innerHTML = key;
+                tr.appendChild(td1);
+                td2 = document.createElement('td');
+                td2.innerHTML = map[key];
+                tr.appendChild(td2);
+            }
+        }
+
+        function update_note() {
+            for (let key in json.newslist[0].desc) {
+                if (key.indexOf('remark') != -1 || key.indexOf('note') != -1) {
+                    texts = json.newslist[0].desc[key].split('：', 2);
+                    if (texts[1]) {
+                        tr = document.createElement('tr');
+                        document.getElementById('note_body').appendChild(tr);
+                        td1 = document.createElement('td');
+                        td1.innerHTML = texts[0];
+                        tr.appendChild(td1);
+                        td2 = document.createElement('td');
+                        td2.innerHTML = texts[1];
+                        tr.appendChild(td2);
+                    }
+                }
+            }
+        }
+
+        window.onload = function () {
+            this.main();
+        };
+    </script>
+</body>
+
+</html>
